@@ -1,44 +1,50 @@
 import { Injectable } from '@nestjs/common';
-import { FAKE_PLAYERS } from '../../data/fake_players';
-import * as fs from 'fs';
-import * as path from 'path';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Player } from '../../model/entity/Player.entity';
 
 @Injectable()
 export class PlayerService {
-    private fake_players: any[];
+  constructor(
+    @InjectRepository(Player)
+    private playersRepository: Repository<Player>,
+  ) {}
 
-    constructor() {
-        this.loadPlayers();
-    }
+async findAll(): Promise<{ name: string }[]> {
+    const players = await this.playersRepository.find();
+    return players.map(player => ({ name: player.name }));
+}
 
-    private loadPlayers() {
-        this.fake_players = FAKE_PLAYERS;
-    }
+async findAllWithRank(): Promise<{ name: string, rank: number }[]> {
+    const players = await this.playersRepository.find();
+    return players.map(player => ({ name: player.name, rank: player.rank }));
+}
 
-    private savePlayers() {
-        const filePath = path.resolve(__dirname, '../../data/fake_players.ts');
-        const fileContent = `export const FAKE_PLAYERS = ${JSON.stringify(this.fake_players, null, 2)};`;
-        fs.writeFileSync(filePath, fileContent, 'utf8');
+  async findOne(id: number): Promise<Player> {
+    const player = await this.playersRepository.findOneBy({ id });
+    if (!player) {
+      throw new Error(`Player with id ${id} not found`);
     }
+    return player;
+  }
 
-    findAll(): any[] {
-        return this.fake_players;
-    }
+  async create(name: string ,rank : number): Promise<Player> {
+    const player = this.playersRepository.create({ name, rank});
+    return this.playersRepository.save(player);
+  }
 
-    findOne(id: string): any {
-        return this.fake_players.find(fake_players => fake_players.id === id);
+  async remove(nomPlayer: string): Promise<void> {
+    const player = await this.playersRepository.findOneBy({ name: nomPlayer });
+    if (player) {
+      await this.playersRepository.delete(player.id);
     }
+  }
 
-    create(nomPlayer: string): any {
-        this.fake_players.push(nomPlayer);
-        this.savePlayers();
+  async updateRank(id: number, newRank: number): Promise<void> {
+    const player = await this.playersRepository.findOneBy({ id });
+    if (player) {
+      player.rank = newRank;
+      await this.playersRepository.save(player);
     }
-
-    removePlayer(nomPlayer: string): void {
-        const playerIndex = this.fake_players.findIndex(player => player.nom === nomPlayer);
-        if (playerIndex > -1) {
-            this.fake_players.splice(playerIndex, 1);
-            this.savePlayers();
-        }
-    }
+  }
 }

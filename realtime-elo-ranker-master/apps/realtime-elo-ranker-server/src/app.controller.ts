@@ -4,7 +4,10 @@ import { AppService } from './app.service';
 import { RankingCacheService } from './services/ranking-cache/ranking-cache.service';
 import { FAKE_PLAYERS } from "./data/fake_players"
 import { Body, Post } from '@nestjs/common';
+
 import { PlayerService } from './services/player/player.service';
+import { Player } from './model/entity/Player.entity';
+
 import { MatchService } from './services/match/match.service';
 
 
@@ -12,6 +15,7 @@ import { MatchService } from './services/match/match.service';
 export class AppController {
   constructor(
     private readonly appService: AppService,
+    private readonly playerService : PlayerService
   ) {}
 
   @Get()
@@ -21,10 +25,8 @@ export class AppController {
 
 
   @Get("/get/ranking")
-  getRanking(): string {
-     const ranking = RankingCacheService.getInstance();
-
-    return ranking.getRankingData("ranking");
+  getRanking(): Promise<{ name: string, rank: number }[]> {
+    return this.playerService.findAllWithRank();
   }
 
 
@@ -66,6 +68,29 @@ export class AppController {
       res.end();
     });
   }
+
+
+  @Get('players')
+  findAll(): Promise<{ name: string }[]> {
+    return this.playerService.findAll();
+  }
+
+  @Get('players/:id')
+  findOne(id: string): Promise<Player> {
+    return this.playerService.findOne(+id);
+  }
+
+  @Post('players')
+  create(@Body('name') name: string,rank : number): Promise<Player> {
+    return this.playerService.create(name,rank);
+  }
+
+  @Post('players/:id')
+  remove(nomPlayer: string): Promise<void> {
+    return this.playerService.remove(nomPlayer);
+  }
+
+
 }
 
 

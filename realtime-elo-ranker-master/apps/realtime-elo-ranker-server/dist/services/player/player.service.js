@@ -8,45 +8,56 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlayerService = void 0;
 const common_1 = require("@nestjs/common");
-const fake_players_1 = require("../../data/fake_players");
-const fs = require("fs");
-const path = require("path");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const Player_entity_1 = require("../../model/entity/Player.entity");
 let PlayerService = class PlayerService {
-    constructor() {
-        this.loadPlayers();
+    constructor(playersRepository) {
+        this.playersRepository = playersRepository;
     }
-    loadPlayers() {
-        this.fake_players = fake_players_1.FAKE_PLAYERS;
+    async findAll() {
+        const players = await this.playersRepository.find();
+        return players.map(player => ({ name: player.name }));
     }
-    savePlayers() {
-        const filePath = path.resolve(__dirname, '../../data/fake_players.ts');
-        const fileContent = `export const FAKE_PLAYERS = ${JSON.stringify(this.fake_players, null, 2)};`;
-        fs.writeFileSync(filePath, fileContent, 'utf8');
+    async findAllWithRank() {
+        const players = await this.playersRepository.find();
+        return players.map(player => ({ name: player.name, rank: player.rank }));
     }
-    findAll() {
-        return this.fake_players;
+    async findOne(id) {
+        const player = await this.playersRepository.findOneBy({ id });
+        if (!player) {
+            throw new Error(`Player with id ${id} not found`);
+        }
+        return player;
     }
-    findOne(id) {
-        return this.fake_players.find(fake_players => fake_players.id === id);
+    async create(name, rank) {
+        const player = this.playersRepository.create({ name, rank });
+        return this.playersRepository.save(player);
     }
-    create(nomPlayer) {
-        this.fake_players.push(nomPlayer);
-        this.savePlayers();
+    async remove(nomPlayer) {
+        const player = await this.playersRepository.findOneBy({ name: nomPlayer });
+        if (player) {
+            await this.playersRepository.delete(player.id);
+        }
     }
-    removePlayer(nomPlayer) {
-        const playerIndex = this.fake_players.findIndex(player => player.nom === nomPlayer);
-        if (playerIndex > -1) {
-            this.fake_players.splice(playerIndex, 1);
-            this.savePlayers();
+    async updateRank(id, newRank) {
+        const player = await this.playersRepository.findOneBy({ id });
+        if (player) {
+            player.rank = newRank;
+            await this.playersRepository.save(player);
         }
     }
 };
 exports.PlayerService = PlayerService;
 exports.PlayerService = PlayerService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [])
+    __param(0, (0, typeorm_1.InjectRepository)(Player_entity_1.Player)),
+    __metadata("design:paramtypes", [typeorm_2.Repository])
 ], PlayerService);
 //# sourceMappingURL=player.service.js.map
