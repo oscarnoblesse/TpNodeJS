@@ -15,7 +15,7 @@ import {
   RankingEventType,
 } from "../services/ranking/models/ranking-event";
 import { motion } from "motion/react";
-import postMatchResult from "../services/match/post-match-result";
+import {postMatchResult} from "../services/match/post-match-result";
 import { postPlayer } from "../services/player/post-player";
 import eventEmitter from "../services/eventEmmitter";
 
@@ -118,6 +118,18 @@ export default function Home() {
       eventEmitter.off("playerPosted",handlePlayerPosted);
     }
   })
+
+  useEffect(() => {
+    const handleMatchPosted = (adversaryA: String, adversaryB: String, result: boolean ) => {
+      fetchRanking(API_BASE_URL).then(setLadderData);
+    };
+    eventEmitter.on("matchResultPosted", handleMatchPosted);
+
+    return () => {
+      eventEmitter.off("matchResultPosted", handleMatchPosted);
+    };
+  });
+
   return (
     <div className="min-h-screen w-full">
       <motion.main

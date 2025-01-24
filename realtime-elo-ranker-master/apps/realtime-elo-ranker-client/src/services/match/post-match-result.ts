@@ -1,6 +1,7 @@
 import { MatchResult } from "@realtime-elo-ranker/libs/ui";
+import eventEmitter from '../eventEmmitter'; // Ensure this path is correct and the module exists
 
-const URL = "/post/match"
+const URL = "/post/match";
 
 /**
  * Post the result of a match.
@@ -10,17 +11,19 @@ const URL = "/post/match"
  * @param {string} adversaryB The ID of the second adversary
  * @param {MatchResult} result The result of the match
  */
-export default function postMatchResult(baseUrl: string, adversaryA: string, adversaryB: string, result: MatchResult): Promise<Response> {
-  return fetch(baseUrl + URL, {
+export async function postMatchResult(baseUrl: string, adversaryA: string, adversaryB: string, result: MatchResult): Promise<Response> {
+  const response = await fetch(baseUrl + URL, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
       winner: result === MatchResult.LEFT_WIN ? adversaryA : result === MatchResult.RIGHT_WIN ? adversaryB : null,
       loser: result === MatchResult.LEFT_WIN ? adversaryB : result === MatchResult.RIGHT_WIN ? adversaryA : null,
       draw: result === MatchResult.DRAW ? true : false,
     }),
-    headers: {
-      "Content-Type": "application/json",
-    },
-  }
-  )
+  });
+  eventEmitter.emit('matchResultPosted', { adversaryA, adversaryB, result });
+
+  return response;
 }
