@@ -1,4 +1,5 @@
-const URL = "/api/player";
+const URL = "/post/player";
+import eventEmitter from '../eventEmmitter'; // Ensure this path is correct and the module exists
 
 /**
  * Post a player to create it.
@@ -6,14 +7,19 @@ const URL = "/api/player";
  * @param {string} baseUrl The base URL of the API
  * @param {string} id The ID of the new player
  */
-export default function postPlayer(baseUrl: string, id: string): Promise<Response> {
-  return fetch(baseUrl + URL, {
-    method: "POST",
-    body: JSON.stringify({
-      id,
-    }),
+
+export async function postPlayer(baseUrl: string, playerName: string): Promise<Response> {
+  const response = await fetch( baseUrl + URL, {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify({playerName, }),
   });
+
+  if (!response.ok) {
+    eventEmitter.emit('playerPosted',playerName);
+  }
+
+  return response;
 }

@@ -12,7 +12,7 @@ var RankingCacheService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RankingCacheService = void 0;
 const common_1 = require("@nestjs/common");
-const fake_players_1 = require("../data/fake_players");
+const fake_players_1 = require("../../data/fake_players");
 let RankingCacheService = RankingCacheService_1 = class RankingCacheService {
     constructor() {
         this.cache = new Map();
@@ -29,7 +29,9 @@ let RankingCacheService = RankingCacheService_1 = class RankingCacheService {
         return RankingCacheService_1.instance;
     }
     setRankingData(key, data) {
-        this.cache.set(key, data);
+        const rank = this.cache.get("ranking") || [];
+        rank.push({ id: key, rank: data });
+        this.cache.set("ranking", rank);
     }
     getRankingData(key) {
         return this.cache.get(key);
@@ -39,6 +41,34 @@ let RankingCacheService = RankingCacheService_1 = class RankingCacheService {
     }
     clearAllRankingData() {
         this.cache.clear();
+    }
+    getRank(player) {
+        const ranking = this.cache.get('ranking') || [];
+        for (const playerData of ranking) {
+            if (playerData.id === player) {
+                return playerData.rank;
+            }
+        }
+        return undefined;
+    }
+    updateRank(player, newRank) {
+        const ranking = this.cache.get('ranking') || [];
+        const playerIndex = ranking.findIndex((p) => p.id === player);
+        if (playerIndex !== -1) {
+            ranking[playerIndex].rank = newRank;
+            this.cache.set('ranking', ranking.sort((a, b) => b.rank - a.rank));
+        }
+    }
+    getMoyenRankAllPlayer() {
+        const ranking = this.cache.get('ranking') || [];
+        if (ranking.length === 0) {
+            return 0;
+        }
+        let totalRank = 0;
+        for (const player of ranking) {
+            totalRank += player.rank;
+        }
+        return totalRank / ranking.length;
     }
 };
 exports.RankingCacheService = RankingCacheService;

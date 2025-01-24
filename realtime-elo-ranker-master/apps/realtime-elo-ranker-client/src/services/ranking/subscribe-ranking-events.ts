@@ -1,4 +1,4 @@
-const URL = "/api/ranking/events";
+const URL = "/ranking/event";
 
 /**
  * Subscribe to ranking events

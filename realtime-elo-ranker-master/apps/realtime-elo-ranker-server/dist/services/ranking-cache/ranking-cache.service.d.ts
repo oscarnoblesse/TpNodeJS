@@ -7,4 +7,7 @@ export declare class RankingCacheService {
     getRankingData(key: string): any | undefined;
     clearRankingData(key: string): void;
     clearAllRankingData(): void;
+    getRank(player: string): number | undefined;
+    updateRank(player: string, newRank: number): void;
+    getMoyenRankAllPlayer(): number;
 }

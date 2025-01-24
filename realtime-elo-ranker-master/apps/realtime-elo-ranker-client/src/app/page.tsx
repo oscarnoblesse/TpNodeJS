@@ -16,7 +16,8 @@ import {
 } from "../services/ranking/models/ranking-event";
 import { motion } from "motion/react";
 import postMatchResult from "../services/match/post-match-result";
-import postPlayer from "../services/player/post-player";
+import { postPlayer } from "../services/player/post-player";
+import eventEmitter from "../services/eventEmmitter";
 
 const poppinsBold = Poppins({
   weight: "600",
@@ -107,6 +108,16 @@ export default function Home() {
     return () => eventSource.close();
   }, [API_BASE_URL, updateLadderData]);
 
+  useEffect(() =>{
+    const handlePlayerPosted = (playerId : String) => {
+      fetchRanking(API_BASE_URL).then(setLadderData);
+    }
+    eventEmitter.on("playerPosted",handlePlayerPosted);
+
+    return() => {
+      eventEmitter.off("playerPosted",handlePlayerPosted);
+    }
+  })
   return (
     <div className="min-h-screen w-full">
       <motion.main
@@ -140,16 +151,18 @@ export default function Home() {
               }
             />
           </div>
-          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
             <h2 className={`${poppinsSemiBold.className} text-2xl`}>
               Déclarer un joueur
             </h2>
             <PlayerForm
-              callback={(playerName: string) =>
-                postPlayer(API_BASE_URL, playerName)
-              }
+              callback={async (playerName: string) => {
+                const response = await postPlayer(API_BASE_URL, playerName);
+                fetchRanking(API_BASE_URL).then(setLadderData);
+                return response;
+              }}
             />
-          </div>
+            </div>
         </div>
       </motion.main>
       <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center"></footer>

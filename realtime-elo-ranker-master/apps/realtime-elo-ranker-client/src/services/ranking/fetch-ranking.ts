@@ -1,7 +1,5 @@
 import { PlayerData } from "@realtime-elo-ranker/libs/ui";
 
-const URL = "/get/ranking";
-
 /**
  * Fetch the ranking.
  * 
@@ -10,11 +8,20 @@ const URL = "/get/ranking";
  * @returns {Promise<PlayerData[]>} A promise of future ranking data
  */
 export default function fetchRanking(baseUrl: string): Promise<PlayerData[]> {
-  return fetch(baseUrl + URL, { method: "GET" })
+  return fetch( "http://localhost:3000/get/ranking", { method: "GET" })
     .then(res => {
       if (res.ok) {
+        console.log(res)
         return res.json();
       }
       throw new Error("Failed to fetch ranking");
+    })
+    .then(data => {
+      // Assuming the data is in the correct format
+      return data as PlayerData[];
+    })
+    .catch(error => {
+      console.error("Error fetching ranking:", error);
+      throw error;
     });
 }

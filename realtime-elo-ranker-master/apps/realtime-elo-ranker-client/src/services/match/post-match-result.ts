@@ -1,6 +1,6 @@
 import { MatchResult } from "@realtime-elo-ranker/libs/ui";
 
-const URL = "/api/match";
+const URL = "/post/match"
 
 /**
  * Post the result of a match.
