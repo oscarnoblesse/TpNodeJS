@@ -26,39 +26,45 @@ export class AppController {
 
   @Get("/get/ranking")
   getRanking(): Promise<{ name: string, rank: number }[]> {
-    return this.playerService.findAllWithRank();
+    return this.playerService.findAllWithRank()
   }
 
 
   @Post("/post/player")
   async postPlayer(@Body() body: { playerName: string }, @Res() res: Response) {
-    const {playerName} = body;
-    const ranking = RankingCacheService.getInstance();
-    ranking.setRankingData(playerName,ranking.getMoyenRankAllPlayer());
+    const { playerName } = body;
+    await this.playerService.createWithInitialRank(playerName);
     res.status(200).send(playerName);
   }
 
   @Post("/post/match")
   async postMatch(@Body() body: { winner: string, loser: string, draw: boolean }, @Res() res: Response) {
-    const matchService = MatchService.getInstance()
-    const result = matchService.getResultatMatch(body.winner, body.loser, body.draw)
+    const result = this.playerService.getResultatMatch(body.winner, body.loser, body.draw)
     res.status(200).send(result);
   }
 
 
   @Get("/ranking/event")
-  rankingEvent(@Res() res: Response): void {
+  async rankingEvent(@Res() res: Response): Promise<void> {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    const intervalId = setInterval(() => {
+    const intervalId = setInterval(async () => { 
+      const players = await this.playerService.findAll();
+      const randomPlayer = players[Math.floor(Math.random() * players.length)];
+      const newRank = Math.floor(Math.random() * 2500);
+
+      // Update player's rank in the database
+      await this.playerService.updateRank(randomPlayer.name, newRank);
+
       res.write("event: message\n" + "data: " + JSON.stringify({
         type: "RankingUpdate",
         player: {
-          id: FAKE_PLAYERS[(Math.floor(Math.random() * FAKE_PLAYERS.length))],
-          rank: Math.floor(Math.random() * 2500)
+          id: randomPlayer.name,
+          name: randomPlayer.name,
+          rank: newRank
         }
       }) + '\n\n');
     }, 500);
@@ -67,27 +73,6 @@ export class AppController {
       clearInterval(intervalId);
       res.end();
     });
-  }
-
-
-  @Get('players')
-  findAll(): Promise<{ name: string }[]> {
-    return this.playerService.findAll();
-  }
-
-  @Get('players/:id')
-  findOne(id: string): Promise<Player> {
-    return this.playerService.findOne(+id);
-  }
-
-  @Post('players')
-  create(@Body('name') name: string,rank : number): Promise<Player> {
-    return this.playerService.create(name,rank);
-  }
-
-  @Post('players/:id')
-  remove(nomPlayer: string): Promise<void> {
-    return this.playerService.remove(nomPlayer);
   }
 
 

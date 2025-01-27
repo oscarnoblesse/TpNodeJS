@@ -26,7 +26,7 @@ const RankingLadder: FC<RankingLadderProps> = (props) => {
         <div className="pt-4 columns-8 gap-4 overflow-x-auto max-h-full themed-scrollbar">
           {data.map((player) => (
             <motion.div
-              key={player.id}
+              key={player.name}
               initial={{ scale: 0 }}
               animate={{
                 scale: 1,

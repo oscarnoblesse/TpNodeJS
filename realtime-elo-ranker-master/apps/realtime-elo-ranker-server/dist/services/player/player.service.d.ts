@@ -11,7 +11,13 @@ export declare class PlayerService {
         rank: number;
     }[]>;
     findOne(id: number): Promise<Player>;
+    createWithInitialRank(name: string): Promise<Player>;
     create(name: string, rank: number): Promise<Player>;
     remove(nomPlayer: string): Promise<void>;
-    updateRank(id: number, newRank: number): Promise<void>;
+    updateRank(name: string, newRank: number): Promise<void>;
+    getMoyenRankAllPlayer(): Promise<number>;
+    getResultatMatch(joueur1: string, joueur2: string, result: boolean): Promise<{
+        newRankJouer1: number;
+        newRankJouer2: number;
+    }>;
 }

@@ -23,7 +23,11 @@ export async function postMatchResult(baseUrl: string, adversaryA: string, adver
       draw: result === MatchResult.DRAW ? true : false,
     }),
   });
-  eventEmitter.emit('matchResultPosted', { adversaryA, adversaryB, result });
+  if (response.ok) {
+    eventEmitter.emit('matchResultPosted', { adversaryA, adversaryB, result });
+  } else {
+    console.error('Failed to post match result', response.statusText);
+  }
 
   return response;
 }
