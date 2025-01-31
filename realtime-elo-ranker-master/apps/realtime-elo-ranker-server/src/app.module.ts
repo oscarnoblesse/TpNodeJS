@@ -34,7 +34,7 @@ export class AppModule {
         }));
 
         for (const player of fakeRanking) {
-          await this.playerService.create(player.name, player.rank);
+          await this.playerService.created(player.name, player.rank);
         }
       };
       await seedFakePlayers();

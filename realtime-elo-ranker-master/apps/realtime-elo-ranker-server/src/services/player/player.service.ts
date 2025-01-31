@@ -31,12 +31,16 @@ async findAllWithRank(): Promise<{ name: string, rank: number }[]> {
   }
 
   async createWithInitialRank(name: string): Promise<Player> {
+    const existingPlayer = await this.playersRepository.findOne({ where: { name } });
+    if (existingPlayer) {
+      throw new Error(`Player with name ${name} already exists`);
+    }
     const rank = await this.getMoyenRankAllPlayer();
     const player = this.playersRepository.create({ name, rank });
     return this.playersRepository.save(player);
   }
 
-  async create(name: string, rank : number): Promise<Player> {
+  async created(name: string, rank : number): Promise<Player> {
     const player = this.playersRepository.create({ name, rank });
     return this.playersRepository.save(player);
   }

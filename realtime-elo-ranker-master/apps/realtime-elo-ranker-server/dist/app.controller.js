@@ -23,7 +23,7 @@ let AppController = class AppController {
         this.playerService = playerService;
     }
     getHello() {
-        return this.appService.getHello();
+        return 'Hello World!';
     }
     getRanking() {
         return this.playerService.findAllWithRank();
@@ -34,7 +34,7 @@ let AppController = class AppController {
         res.status(200).send(playerName);
     }
     async postMatch(body, res) {
-        const result = this.playerService.getResultatMatch(body.winner, body.loser, body.draw);
+        const result = await this.playerService.getResultatMatch(body.winner, body.loser, body.draw);
         res.status(200).send(result);
     }
     async rankingEvent(res) {

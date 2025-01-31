@@ -31,7 +31,7 @@ let AppModule = class AppModule {
                     rank: 1000 + index * 10,
                 }));
                 for (const player of fakeRanking) {
-                    await this.playerService.create(player.name, player.rank);
+                    await this.playerService.created(player.name, player.rank);
                 }
             };
             await seedFakePlayers();

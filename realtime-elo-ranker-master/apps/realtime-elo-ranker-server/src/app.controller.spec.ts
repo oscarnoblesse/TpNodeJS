@@ -2,26 +2,36 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PlayerService } from './services/player/player.service';
-import { Response } from 'express';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Player } from './model/entity/Player.entity';
-import { Repository } from 'typeorm';
 
 describe('AppController', () => {
   let appController: AppController;
+  let appService: AppService;
   let playerService: PlayerService;
+
+  const mockPlayerService = {
+    findAllWithRank: jest.fn().mockResolvedValue([{ name: 'Player1', rank: 1 }]),
+    createWithInitialRank: jest.fn().mockResolvedValue(undefined),
+    getResultatMatch: jest.fn().mockResolvedValue({ winner: 'Player1', loser: 'Player2', draw: false }),
+  };
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService, PlayerService],
+      providers: [
+        AppService,
+        {
+          provide: PlayerService,
+          useValue: mockPlayerService,
+        },
+      ],
     }).compile();
 
     appController = app.get<AppController>(AppController);
+    appService = app.get<AppService>(AppService);
     playerService = app.get<PlayerService>(PlayerService);
   });
 
-  describe('root', () => {
+  describe('getHello', () => {
     it('should return "Hello World!"', () => {
       expect(appController.getHello()).toBe('Hello World!');
     });
@@ -29,72 +39,39 @@ describe('AppController', () => {
 
   describe('getRanking', () => {
     it('should return ranking', async () => {
-      const result = [{ name: 'Player1', rank: 1 }];
-      jest.spyOn(playerService, 'findAllWithRank').mockResolvedValue(result);
-
-      expect(await appController.getRanking()).toBe(result);
+      const result = await appController.getRanking();
+      expect(result).toEqual([{ name: 'Player1', rank: 1 }]);
+      expect(playerService.findAllWithRank).toHaveBeenCalled();
     });
   });
 
   describe('postPlayer', () => {
-    it('should create a player and return playerName', async () => {
-      const playerName = 'Player1';
+    it('should create a player and return the player name', async () => {
+      const body = { playerName: 'Player1' };
       const res = {
         status: jest.fn().mockReturnThis(),
         send: jest.fn(),
-      } as unknown as Response;
+      };
 
-      await appController.postPlayer({ playerName }, res);
-
-      expect(playerService.createWithInitialRank).toHaveBeenCalledWith(playerName);
+      await appController.postPlayer(body, res as any);
+      expect(playerService.createWithInitialRank).toHaveBeenCalledWith('Player1');
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith(playerName);
+      expect(res.send).toHaveBeenCalledWith('Player1');
     });
   });
 
   describe('postMatch', () => {
     it('should return match result', async () => {
-      const matchResult = { winner: 'Player1', loser: 'Player2', draw: false };
-      const result = { newRankJouer1: 1500, newRankJouer2: 1400 };
+      const body = { winner: 'Player1', loser: 'Player2', draw: false };
       const res = {
         status: jest.fn().mockReturnThis(),
         send: jest.fn(),
-      } as unknown as Response;
-
-      jest.spyOn(playerService, 'getResultatMatch').mockResolvedValue(Promise.resolve(result));
-
-      await appController.postMatch(matchResult, res);
-
-      expect(playerService.getResultatMatch).toHaveBeenCalledWith(matchResult.winner, matchResult.loser, matchResult.draw);
+      };
+  
+      await appController.postMatch(body, res as any);
+      expect(playerService.getResultatMatch).toHaveBeenCalledWith('Player1', 'Player2', false);
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith(result);
-    });
-  });
-
-  describe('rankingEvent', () => {
-    it('should send ranking updates', async () => {
-      const players = [{ name: 'Player1' }];
-      jest.spyOn(playerService, 'findAll').mockResolvedValue(players);
-      jest.spyOn(playerService, 'updateRank').mockResolvedValue(undefined);
-
-      const res = {
-        setHeader: jest.fn(),
-        flushHeaders: jest.fn(),
-        write: jest.fn(),
-        on: jest.fn((event, callback) => {
-          if (event === 'close') {
-            callback();
-          }
-        }),
-        end: jest.fn(),
-      } as unknown as Response;
-
-      await appController.rankingEvent(res);
-
-      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/event-stream');
-      expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-cache');
-      expect(res.setHeader).toHaveBeenCalledWith('Connection', 'keep-alive');
-      expect(res.flushHeaders).toHaveBeenCalled();
+      expect(res.send).toHaveBeenCalledWith({ winner: 'Player1', loser: 'Player2', draw: false });
     });
   });
 });

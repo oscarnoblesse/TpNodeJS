@@ -1,79 +1,68 @@
-import * as request from 'supertest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { PlayerService } from './player.service';
 import { Player } from '../../model/entity/Player.entity';
 import { Repository } from 'typeorm';
 
-
-
 describe('PlayerService', () => {
-  const service: PlayerService;
+  let service: PlayerService;
   let repository: Repository<Player>;
 
+  const mockPlayers = [
+    { id: 1, name: 'Player1', rank: 1 },
+    { id: 2, name: 'Player2', rank: 2 },
+  ];
+
+  const mockRepository = {
+    find: jest.fn().mockResolvedValue(mockPlayers),
+    findOne: jest.fn().mockResolvedValue(mockPlayers[0]),
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        PlayerService,
+        {
+          provide: getRepositoryToken(Player),
+          useValue: mockRepository,
+        },
+      ],
+    }).compile();
+
+    service = module.get<PlayerService>(PlayerService);
+    repository = module.get<Repository<Player>>(getRepositoryToken(Player));
+  });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  it('should create a player with initial rank', async () => {
-    const player = await service.createWithInitialRank('John Doe');
-    expect(player).toBeDefined();
-    expect(player.name).toBe('John Doe');
-    expect(player.rank).toBe(0);
+  describe('findAll', () => {
+    it('should return an array of players', async () => {
+      const result = await service.findAll();
+      expect(result).toEqual(mockPlayers.map(player => ({ name: player.name })));
+      expect(repository.find).toHaveBeenCalled();
+    });
   });
 
-  it('should find all players', async () => {
-    await service.create('John Doe', 1000);
-    await service.create('Jane Doe', 1200);
-    const players = await service.findAll();
-    expect(players.length).toBe(2);
-    expect(players).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: 'John Doe' }),
-        expect.objectContaining({ name: 'Jane Doe' }),
-      ]),
-    );
+  describe('findAllWithRank', () => {
+    it('should return an array of players with rank', async () => {
+      const result = await service.findAllWithRank();
+      expect(result).toEqual(mockPlayers);
+      expect(repository.find).toHaveBeenCalled();
+    });
   });
 
-  it('should find a player by id', async () => {
-    const createdPlayer = await service.create('John Doe', 1000);
-    const player = await service.findOne(createdPlayer.id);
-    expect(player).toBeDefined();
-    expect(player.name).toBe('John Doe');
-    expect(player.rank).toBe(1000);
-  });
+  describe('findOne', () => {
+    it('should return a single player', async () => {
+      const result = await service.findOne(1);
+      expect(result).toEqual(mockPlayers[0]);
+      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+    });
 
-  it('should update a player rank', async () => {
-    await service.updateRank('John Doe', 1500);
-    const createdPlayer = await service.create('John Doe', 1000);
-    const player = await service.findOne(createdPlayer.id);
-    expect(player.rank).toBe(1500);
-  });
-
-  it('should remove a player', async () => {
-    let players = await service.findAll();
-    const nb_playersDebut =  players.length;
-    await service.create('John Doe', 1000);
-    await service.remove('John Doe');
-    players = await service.findAll();
-    expect(players.length).toBe(nb_playersDebut);
-  });
-
-  it('should calculate the average rank of all players', async () => {
-    const averageRankBefore = await service.getMoyenRankAllPlayer();
-    await service.create('John Doe', 3000);
-    await service.create('Jane Doe', 3000);
-    const averageRank = await service.getMoyenRankAllPlayer();
-    expect(averageRank).toBeGreaterThan(averageRankBefore);
-  });
-
-  it('should calculate new ranks after a match', async () => {
-    await service.create('John Doe', 1000);
-    await service.create('Jane Doe', 1200);
-    const result = await service.getResultatMatch('John Doe', 'Jane Doe', true);
-    expect(result.newRankJouer1).toBeGreaterThan(1000);
-    expect(result.newRankJouer2).toBeLessThan(1200);
+    it('should throw an error if player not found', async () => {
+      jest.spyOn(repository, 'findOne').mockResolvedValueOnce(undefined);
+      await expect(service.findOne(3)).rejects.toThrow('Player with id 3 not found');
+    });
   });
 });

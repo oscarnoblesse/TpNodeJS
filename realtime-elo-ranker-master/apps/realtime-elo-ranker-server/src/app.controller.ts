@@ -1,14 +1,9 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { AppService } from './app.service';
-import { RankingCacheService } from './services/ranking-cache/ranking-cache.service';
-import { FAKE_PLAYERS } from "./data/fake_players"
 import { Body, Post } from '@nestjs/common';
 
 import { PlayerService } from './services/player/player.service';
-import { Player } from './model/entity/Player.entity';
-
-import { MatchService } from './services/match/match.service';
 
 
 @Controller()
@@ -20,7 +15,7 @@ export class AppController {
 
   @Get()
   getHello(): string {
-    return this.appService.getHello();
+    return 'Hello World!';
   }
 
 
@@ -39,9 +34,9 @@ export class AppController {
 
   @Post("/post/match")
   async postMatch(@Body() body: { winner: string, loser: string, draw: boolean }, @Res() res: Response) {
-    const result = this.playerService.getResultatMatch(body.winner, body.loser, body.draw)
+    const result = await this.playerService.getResultatMatch(body.winner, body.loser, body.draw);
     res.status(200).send(result);
-  }
+}
 
 
   @Get("/ranking/event")

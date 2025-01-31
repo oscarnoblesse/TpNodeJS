@@ -39,11 +39,15 @@ let PlayerService = class PlayerService {
         return player;
     }
     async createWithInitialRank(name) {
+        const existingPlayer = await this.playersRepository.findOne({ where: { name } });
+        if (existingPlayer) {
+            throw new Error(`Player with name ${name} already exists`);
+        }
         const rank = await this.getMoyenRankAllPlayer();
         const player = this.playersRepository.create({ name, rank });
         return this.playersRepository.save(player);
     }
-    async create(name, rank) {
+    async created(name, rank) {
         const player = this.playersRepository.create({ name, rank });
         return this.playersRepository.save(player);
     }

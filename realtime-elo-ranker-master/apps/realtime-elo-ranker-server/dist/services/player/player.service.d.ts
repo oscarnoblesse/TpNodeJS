@@ -12,7 +12,7 @@ export declare class PlayerService {
     }[]>;
     findOne(id: number): Promise<Player>;
     createWithInitialRank(name: string): Promise<Player>;
-    create(name: string, rank: number): Promise<Player>;
+    created(name: string, rank: number): Promise<Player>;
     remove(nomPlayer: string): Promise<void>;
     updateRank(name: string, newRank: number): Promise<void>;
     getMoyenRankAllPlayer(): Promise<number>;
